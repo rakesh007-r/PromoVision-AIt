@@ -1,0 +1,51 @@
+import React, { useState } from 'react';
+import axios from 'axios';
+
+const BannerGenerator = () => {
+  const [productImage, setProductImage] = useState(null);
+  const [offerText, setOfferText] = useState("");
+  const [colorPalette, setColorPalette] = useState("0,0,0"); // Default to black
+
+  const handleImageUpload = (e) => {
+    setProductImage(e.target.files[0]);
+  };
+
+  const handleSubmit = async () => {
+    const formData = new FormData();
+    formData.append('product_image', productImage);
+    formData.append('offer_text', offerText);
+    formData.append('color_palette', colorPalette);
+
+    try {
+      const response = await axios.post('/generate-banner', formData, {
+        responseType: 'blob',
+      });
+      const url = URL.createObjectURL(new Blob([response.data]));
+      window.open(url); // Open the generated banner
+    } catch (error) {
+      console.error('Error generating banner', error);
+    }
+  };
+
+  return (
+    <div>
+      <h2>PromoVision AI - Banner Generator</h2>
+      <input type="file" onChange={handleImageUpload} />
+      <input 
+        type="text" 
+        placeholder="Enter offer text"
+        value={offerText}
+        onChange={(e) => setOfferText(e.target.value)} 
+      />
+      <input 
+        type="text" 
+        placeholder="Enter color palette (e.g., 255,0,0 for red)"
+        value={colorPalette}
+        onChange={(e) => setColorPalette(e.target.value)} 
+      />
+      <button onClick={handleSubmit}>Generate Banner</button>
+    </div>
+  );
+};
+
+export default BannerGenerator;
