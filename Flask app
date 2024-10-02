@@ -1,0 +1,56 @@
+from flask import Flask, request, send_file
+import cv2
+import numpy as np
+from PIL import Image, ImageDraw, ImageFont
+
+app = Flask(__name__)
+
+# Load font for text rendering
+font_path = "path/to/font.ttf"
+font = ImageFont.truetype(font_path, 40)
+
+# Helper function to generate banner
+def generate_banner(product_img_path, offer_text, color_palette):
+    # Load product image
+    product_image = cv2.imread(product_img_path)
+    
+    # Resize product image for banner
+    product_image_resized = cv2.resize(product_image, (600, 400))
+    
+    # Create banner background with brand color
+    banner_height, banner_width = 600, 1200
+    banner = np.ones((banner_height, banner_width, 3), dtype=np.uint8) * np.array(color_palette, dtype=np.uint8)
+    
+    # Convert OpenCV image to PIL for easier text handling
+    banner_pil = Image.fromarray(cv2.cvtColor(banner, cv2.COLOR_BGR2RGB))
+    draw = ImageDraw.Draw(banner_pil)
+    
+    # Place product image on banner
+    banner_pil.paste(Image.fromarray(cv2.cvtColor(product_image_resized, cv2.COLOR_BGR2RGB)), (50, 100))
+    
+    # Add promotional text
+    draw.text((700, 200), offer_text, font=font, fill=(255, 255, 255))  # White text
+    
+    # Convert back to OpenCV format
+    banner = cv2.cvtColor(np.array(banner_pil), cv2.COLOR_RGB2BGR)
+    
+    # Save the banner
+    output_path = "output/banner.jpg"
+    cv2.imwrite(output_path, banner)
+    
+    return output_path
+
+@app.route('/generate-banner', methods=['POST'])
+def generate_banner_endpoint():
+    # Get input from request
+    product_img_path = request.form['product_image']
+    offer_text = request.form['offer_text']
+    color_palette = [int(x) for x in request.form['color_palette'].split(',')]  # RGB color palette
+    
+    # Generate the banner
+    banner_path = generate_banner(product_img_path, offer_text, color_palette)
+    
+    return send_file(banner_path, mimetype='image/jpeg')
+
+if __name__ == '__main__':
+    app.run(debug=True)
